@@ -12,7 +12,7 @@ import logging
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
-!pip install scrapy
+
 !pip install streamlit
 !pip install newspaper3k
 !pip install feedparser
@@ -161,23 +161,22 @@ import pandas as pd
 
 # Assuming 'clustered_df' is the DataFrame from the previous code
 # Replace 'news_data.csv' with the actual path to your combined CSV
-# clustered_df = cluster_stories('news_data.csv')
-
 # Sample clustered data (replace with your actual clustered_df)
 data = {
     'Category': ['Business', 'Politics', 'Arts/Culture/Celebrities', 'Sports', 'Business', 'Politics'],
     'Title': ['Article Title 1', 'Article Title 2', 'Article Title 3', 'Article Title 4', 'Article Title 5', 'Article Title 6'],
     'Content': ['Content 1', 'Content 2', 'Content 3', 'Content 4', 'Content 5', 'Content 6'],
     'Cluster': [0, 1, 2, 0, 1, 2],
-    'URL': ['url1', 'url2', 'url3', 'url4', 'url5', 'url6'] # Add a URL column
+    'URL': ['url1', 'url2', 'url3', 'url4', 'url5', 'url6']  # Add a URL column
 }
 
+# Creating the DataFrame
 clustered_df = pd.DataFrame(data)
 
-
-st.title("Story ClustersNews ")
+# Streamlit app title and description
+st.title("Story Clusters News")
 st.subheader("News Stories categorized into Business, Politics, Arts/Culture/Celebrities, and Sports")
-st.subheader("Hilda Rupere r216904r  web assignment 3")
+st.subheader("Hilda Rupere r216904r Web Assignment 3")
 
 # Sidebar for cluster selection
 selected_cluster = st.sidebar.selectbox("Select Cluster", clustered_df['Cluster'].unique())
@@ -192,4 +191,4 @@ st.write(f"## Cluster {selected_cluster}")
 for index, row in cluster_data.iterrows():
     st.write(f"**{row['Category']}**: [{row['Title']}]({row['URL']})")
     st.write(row['Content'])
-    st.write("---") # separator between stories
+    st.write("---")  # Separator between stories
