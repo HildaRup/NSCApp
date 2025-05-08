@@ -1,6 +1,5 @@
-# app_complete.py
-import streamlit as st
-import feedparser
+# app_complete
+pip install feedparser
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
