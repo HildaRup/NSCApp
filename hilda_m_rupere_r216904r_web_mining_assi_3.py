@@ -4,7 +4,6 @@ import feedparser
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
-import os
 
 # Define RSS feeds for four newspapers
 RSS_FEEDS = {
@@ -20,7 +19,7 @@ def classify_news(title, summary):
         'Politics': ['politics', 'election', 'senate', 'congress', 'law'],
         'Celebrities/Arts/Culture': ['art', 'movie', 'celebrity', 'theatre', 'culture'],
         'Business': ['economy', 'business', 'stocks', 'market', 'trade'],
-        'Sports': ['sports', 'game', 'tournament', 'match', 'Olympics']
+        'Sports': ['sports', 'game', 'tournament', 'match', 'olympics']
     }
     text = (title + ' ' + summary).lower()
     for category, words in keywords.items():
@@ -32,19 +31,22 @@ def classify_news(title, summary):
 def fetch_all_news():
     all_news = []
     for name, url in RSS_FEEDS.items():
-        feed = feedparser.parse(url)
-        for entry in feed.entries:
-            title = entry.get('title', '')
-            link = entry.get('link', '')
-            summary = entry.get('summary', '')
-            category = classify_news(title, summary)
-            all_news.append({
-                'source': name,
-                'title': title,
-                'link': link,
-                'summary': summary,
-                'category': category
-            })
+        try:
+            feed = feedparser.parse(url)
+            for entry in feed.entries:
+                title = entry.get('title', '')
+                link = entry.get('link', '')
+                summary = entry.get('summary', '') or entry.get('description', '')
+                category = classify_news(title, summary)
+                all_news.append({
+                    'source': name,
+                    'title': title,
+                    'link': link,
+                    'summary': summary,
+                    'category': category
+                })
+        except Exception as e:
+            print(f"Error fetching from {name}: {e}")
     return pd.DataFrame(all_news)
 
 # Save to CSV
@@ -53,7 +55,8 @@ def save_to_csv(df, filename='news_data.csv'):
 
 # Apply clustering
 def cluster_news(df, n_clusters=4):
-    vectorizer = TfidfVectorizer(stop_words='english')
+    vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
+    df['summary'] = df['summary'].fillna('')
     X = vectorizer.fit_transform(df['summary'])
     model = KMeans(n_clusters=n_clusters, random_state=42)
     df['cluster'] = model.fit_predict(X)
@@ -64,10 +67,14 @@ def main():
     st.title("Clustered News Stories Viewer")
     st.write("Assignment by Tinashe Zigara - R207669D")
 
-    news_df = fetch_all_news()
-    save_to_csv(news_df)
+    with st.spinner("Fetching and processing news..."):
+        news_df = fetch_all_news()
+        if news_df.empty:
+            st.error("Failed to fetch any news stories. Please try again later.")
+            return
 
-    clustered_df = cluster_news(news_df)
+        save_to_csv(news_df)
+        clustered_df = cluster_news(news_df)
 
     st.sidebar.title("Cluster Explorer")
     cluster_id = st.sidebar.selectbox("Select Cluster", sorted(clustered_df['cluster'].unique()))
@@ -75,11 +82,11 @@ def main():
 
     st.write(f"### News Stories in Cluster {cluster_id}")
     for _, row in cluster_data.iterrows():
-        st.markdown(f"{row['title']}**  \n{row['summary']}  \n[Read more]({row['link']})  \n_Category: {row['category']}_")
+        st.markdown(f"**{row['title']}**  \n{row['summary']}  \n[Read more]({row['link']})  \n_Category: {row['category']}_")
         st.markdown("---")
 
     with open('news_data.csv', 'rb') as file:
         st.download_button("Download CSV", file, file_name="news_data.csv")
 
-if _name_ == '_main_':
-    main()
+if __name__ == '__main__':
+    main()
