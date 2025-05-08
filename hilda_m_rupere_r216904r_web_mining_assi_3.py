@@ -1,5 +1,6 @@
-# app_complete
+# app_complete.py
 import streamlit as st
+import feedparser
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
@@ -81,4 +82,4 @@ def main():
         st.download_button("Download CSV", file, file_name="news_data.csv")
 
 if _name_ == '_main_':
-    main()
+    main()
