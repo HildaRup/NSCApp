@@ -1,10 +1,10 @@
-# app_complete.py
 import streamlit as st
+import feedparser
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 
-# Define RSS feeds for four newspapers
+# RSS feeds
 RSS_FEEDS = {
     'BBC': 'https://feeds.bbci.co.uk/news/rss.xml',
     'CNN': 'http://rss.cnn.com/rss/edition.rss',
@@ -12,7 +12,7 @@ RSS_FEEDS = {
     'NYTimes': 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'
 }
 
-# Classification function
+# Classification
 def classify_news(title, summary):
     keywords = {
         'Politics': ['politics', 'election', 'senate', 'congress', 'law'],
@@ -26,33 +26,30 @@ def classify_news(title, summary):
             return category
     return 'Uncategorized'
 
-# Fetch news from all feeds
-def fetch_all_news():
-    all_news = []
+# Fetch news
+def fetch_news():
+    news_list = []
     for name, url in RSS_FEEDS.items():
-        try:
-            feed = feedparser.parse(url)
-            for entry in feed.entries:
-                title = entry.get('title', '')
-                link = entry.get('link', '')
-                summary = entry.get('summary', '') or entry.get('description', '')
-                category = classify_news(title, summary)
-                all_news.append({
-                    'source': name,
-                    'title': title,
-                    'link': link,
-                    'summary': summary,
-                    'category': category
-                })
-        except Exception as e:
-            print(f"Error fetching from {name}: {e}")
-    return pd.DataFrame(all_news)
+        feed = feedparser.parse(url)
+        for entry in feed.entries:
+            title = entry.get('title', '')
+            link = entry.get('link', '')
+            summary = entry.get('summary', '') or entry.get('description', '')
+            category = classify_news(title, summary)
+            news_list.append({
+                'source': name,
+                'title': title,
+                'link': link,
+                'summary': summary,
+                'category': category
+            })
+    return pd.DataFrame(news_list)
 
-# Save to CSV
-def save_to_csv(df, filename='news_data.csv'):
-    df.to_csv(filename, index=False)
+# Save CSV
+def save_to_csv(df):
+    df.to_csv("news_data.csv", index=False)
 
-# Apply clustering
+# Clustering
 def cluster_news(df, n_clusters=4):
     vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
     df['summary'] = df['summary'].fillna('')
@@ -61,31 +58,27 @@ def cluster_news(df, n_clusters=4):
     df['cluster'] = model.fit_predict(X)
     return df
 
-# Streamlit App
+# Streamlit UI
 def main():
-    st.title("Clustered News Stories Viewer")
-    st.write("Assignment by Tinashe Zigara - R207669D")
+    st.title("📰 Clustered News Viewer")
+    st.caption("Assignment 3: Web-Content Mining — Tinashe Zigara R207669D")
 
-    with st.spinner("Fetching and processing news..."):
-        news_df = fetch_all_news()
-        if news_df.empty:
-            st.error("Failed to fetch any news stories. Please try again later.")
-            return
+    with st.spinner("Fetching news..."):
+        df = fetch_news()
+        save_to_csv(df)
+        df = cluster_news(df)
 
-        save_to_csv(news_df)
-        clustered_df = cluster_news(news_df)
+    st.sidebar.title("Explore Clusters")
+    cluster_id = st.sidebar.selectbox("Choose Cluster", sorted(df['cluster'].unique()))
+    cluster_df = df[df['cluster'] == cluster_id]
 
-    st.sidebar.title("Cluster Explorer")
-    cluster_id = st.sidebar.selectbox("Select Cluster", sorted(clustered_df['cluster'].unique()))
-    cluster_data = clustered_df[clustered_df['cluster'] == cluster_id]
-
-    st.write(f"### News Stories in Cluster {cluster_id}")
-    for _, row in cluster_data.iterrows():
-        st.markdown(f"**{row['title']}**  \n{row['summary']}  \n[Read more]({row['link']})  \n_Category: {row['category']}_")
+    st.subheader(f"News in Cluster {cluster_id}")
+    for _, row in cluster_df.iterrows():
+        st.markdown(f"**{row['title']}**  \n{row['summary']}  \n[🔗 Read more]({row['link']})  \n*Category: {row['category']}*")
         st.markdown("---")
 
-    with open('news_data.csv', 'rb') as file:
-        st.download_button("Download CSV", file, file_name="news_data.csv")
+    with open("news_data.csv", "rb") as file:
+        st.download_button("📥 Download CSV", file, file_name="news_data.csv")
 
 if __name__ == '__main__':
     main()
