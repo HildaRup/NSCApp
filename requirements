@@ -1,3 +1,4 @@
-feedparser
 streamlit
+feedparser
 pandas
+scikit-learn
