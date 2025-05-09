@@ -8,7 +8,7 @@ from sklearn.cluster import KMeans
 APP_TITLE = "🗞️ News Explorer Dashboard"
 SIDEBAR_TITLE = "🧭 Cluster Navigator"
 CLUSTER_SUBHEADER = "🧩 Articles Grouped by Theme"
-DOWNLOAD_LABEL = "⬇️ Export News as CSV"
+DOWNLOAD_LABEL = "⬇️ Export News  as CSV"
 
 # === RSS Feeds ===
 RSS_FEEDS = {
