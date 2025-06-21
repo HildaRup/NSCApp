@@ -87,7 +87,7 @@ def main():
     with open("news_data.csv", "rb") as file:
         st.download_button(DOWNLOAD_LABEL, file, file_name="news_data.csv")
 
-if __name__ == '__main__':
+ if __name__ == '__main__':
 main()import streamlit as st
 import feedparser
 import pandas as pd
