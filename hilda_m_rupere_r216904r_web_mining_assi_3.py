@@ -4,11 +4,10 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 
-# === ✏️ Customize Appearance Texts Here ===
-APP_TITLE = "🗞️ News Explorer Dashboard"
+# === UI Text ===
+APP_TITLE = "🗞️ News Article Clusters"
 SIDEBAR_TITLE = "🧭 Cluster Navigator"
-CLUSTER_SUBHEADER = "🧩 Articles Grouped by Theme"
-DOWNLOAD_LABEL = "⬇️ Export News  as CSV"
+DOWNLOAD_LABEL = "⬇️ Export News as CSV"
 
 # === RSS Feeds ===
 RSS_FEEDS = {
@@ -18,7 +17,7 @@ RSS_FEEDS = {
     'NYTimes': 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'
 }
 
-# === News Categorization ===
+# === Categorization by Keywords ===
 def classify_news(title, summary):
     keywords = {
         'Politics': ['politics', 'election', 'senate', 'congress', 'law'],
@@ -32,7 +31,7 @@ def classify_news(title, summary):
             return category
     return 'Uncategorized'
 
-# === Fetch News ===
+# === Fetching News ===
 def fetch_news():
     all_articles = []
     for name, url in RSS_FEEDS.items():
@@ -51,7 +50,7 @@ def fetch_news():
             })
     return pd.DataFrame(all_articles)
 
-# === Save CSV ===
+# === Save to CSV ===
 def save_to_csv(df):
     df.to_csv("news_data.csv", index=False)
 
@@ -64,11 +63,23 @@ def cluster_news(df, n_clusters=4):
     df['cluster'] = model.fit_predict(X)
     return df
 
-# === Streamlit App ===
+# === UI: Cluster Display ===
+def display_clusters(df):
+    grouped = df.groupby('cluster')
+
+    for cluster_id, group in grouped:
+        st.markdown(f"### Cluster {cluster_id} ({len(group)} articles)")
+        st.markdown("<ul>", unsafe_allow_html=True)
+        for _, row in group.iterrows():
+            st.markdown(f"<li><a href='{row['link']}' target='_blank'>{row['title']}</a></li>", unsafe_allow_html=True)
+        st.markdown("</ul>", unsafe_allow_html=True)
+        st.markdown("---")
+
+# === Main App ===
 def main():
     st.set_page_config(page_title="News Clustering App", layout="wide")
     st.title(APP_TITLE)
-    st.caption("Developed by Hilda Rupere r216904r — web-Content mining Assignment 3")
+    st.caption("Developed by Hilda Rupere r216904r — Web Content Mining Assignment 3")
 
     with st.spinner("⏳ Fetching latest headlines..."):
         df = fetch_news()
@@ -76,13 +87,9 @@ def main():
         df = cluster_news(df)
 
     st.sidebar.title(SIDEBAR_TITLE)
-    cluster_id = st.sidebar.selectbox("Choose Cluster", sorted(df['cluster'].unique()))
-    filtered = df[df['cluster'] == cluster_id]
+    st.sidebar.info("Explore articles grouped by cluster below")
 
-    st.subheader(f"{CLUSTER_SUBHEADER} — Cluster {cluster_id}")
-    for _, row in filtered.iterrows():
-        st.markdown(f"**{row['title']}**  \n{row['summary']}  \n[🔗 Full Story]({row['link']})  \n*Category: {row['category']}*")
-        st.markdown("---")
+    display_clusters(df)
 
     with open("news_data.csv", "rb") as file:
         st.download_button(DOWNLOAD_LABEL, file, file_name="news_data.csv")
