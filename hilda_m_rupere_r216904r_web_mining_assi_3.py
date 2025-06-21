@@ -88,7 +88,7 @@ def main():
         st.download_button(DOWNLOAD_LABEL, file, file_name="news_data.csv")
 
 if __name__ == '__main__':
-    main()import streamlit as st
+main()import streamlit as st
 import feedparser
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
