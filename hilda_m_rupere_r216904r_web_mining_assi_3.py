@@ -1,12 +1,11 @@
 import streamlit as st
 import feedparser
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.cluster import KMeans
 
-# === UI Text ===
+# === ✏️ Customize Appearance Texts Here ===
 APP_TITLE = "🗞️ News Article Clusters"
 SIDEBAR_TITLE = "🧭 Cluster Navigator"
+CLUSTER_SUBHEADER = "🧩 News Clusters by Category"
 DOWNLOAD_LABEL = "⬇️ Export News as CSV"
 
 # === RSS Feeds ===
@@ -17,13 +16,13 @@ RSS_FEEDS = {
     'NYTimes': 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'
 }
 
-# === Categorization by Keywords ===
+# === News Categorization ===
 def classify_news(title, summary):
     keywords = {
-        'Politics': ['politics', 'election', 'senate', 'congress', 'law'],
-        'Celebrities/Arts/Culture': ['art', 'movie', 'celebrity', 'theatre', 'culture'],
-        'Business': ['economy', 'business', 'stocks', 'market', 'trade'],
-        'Sports': ['sports', 'game', 'tournament', 'match', 'olympics']
+        'Politics': ['politics', 'election', 'senate', 'congress', 'law', 'minister', 'president'],
+        'Arts/Culture/Celebrities': ['art', 'movie', 'music', 'celebrity', 'theatre', 'culture', 'festival', 'exhibition'],
+        'Business': ['economy', 'business', 'stocks', 'market', 'trade', 'finance', 'stock', 'investment'],
+        'Sports': ['sports', 'game', 'tournament', 'match', 'olympics', 'league', 'athlete']
     }
     text = (title + ' ' + summary).lower()
     for category, words in keywords.items():
@@ -31,7 +30,7 @@ def classify_news(title, summary):
             return category
     return 'Uncategorized'
 
-# === Fetching News ===
+# === Fetch News ===
 def fetch_news():
     all_articles = []
     for name, url in RSS_FEEDS.items():
@@ -50,47 +49,33 @@ def fetch_news():
             })
     return pd.DataFrame(all_articles)
 
-# === Save to CSV ===
+# === Save CSV ===
 def save_to_csv(df):
     df.to_csv("news_data.csv", index=False)
 
-# === Clustering ===
-def cluster_news(df, n_clusters=4):
-    vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
-    df['summary'] = df['summary'].fillna('')
-    X = vectorizer.fit_transform(df['summary'])
-    model = KMeans(n_clusters=n_clusters, random_state=42)
-    df['cluster'] = model.fit_predict(X)
-    return df
-
-# === UI: Cluster Display ===
-def display_clusters(df):
-    grouped = df.groupby('cluster')
-
-    for cluster_id, group in grouped:
-        st.markdown(f"### Cluster {cluster_id} ({len(group)} articles)")
-        st.markdown("<ul>", unsafe_allow_html=True)
-        for _, row in group.iterrows():
-            st.markdown(f"<li><a href='{row['link']}' target='_blank'>{row['title']}</a></li>", unsafe_allow_html=True)
-        st.markdown("</ul>", unsafe_allow_html=True)
-        st.markdown("---")
-
-# === Main App ===
+# === Streamlit App ===
 def main():
     st.set_page_config(page_title="News Clustering App", layout="wide")
     st.title(APP_TITLE)
-    st.caption("Developed by Hilda Rupere r216904r — Web Content Mining Assignment 3")
+    st.caption("Developed by Hilda Rupere r216904r — Web-Content Mining Assignment 3")
 
     with st.spinner("⏳ Fetching latest headlines..."):
         df = fetch_news()
         save_to_csv(df)
-        df = cluster_news(df)
 
     st.sidebar.title(SIDEBAR_TITLE)
-    st.sidebar.info("Explore articles grouped by cluster below")
+    st.subheader(CLUSTER_SUBHEADER)
 
-    display_clusters(df)
+    # Group by category and show links
+    grouped = df.groupby('category')
+    for category, group in grouped:
+        st.markdown(f"### Cluster: {category} ({len(group)} articles)")
+        st.markdown("<ul>", unsafe_allow_html=True)
+        for _, row in group.iterrows():
+            st.markdown(f"<li><a href='{row['link']}' target='_blank'>{row['title']}</a></li>", unsafe_allow_html=True)
+        st.markdown("</ul>", unsafe_allow_html=True)
 
+    # Download CSV
     with open("news_data.csv", "rb") as file:
         st.download_button(DOWNLOAD_LABEL, file, file_name="news_data.csv")
 
